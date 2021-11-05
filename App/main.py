@@ -16,23 +16,23 @@ import json
 app = Flask(__name__)
 
 DB_URI= 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user="postgres",pw="abc",url="postgis:5432",db="postgres")
-# app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI # pass to where the database is
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI # pass to where the database is
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-engine = create_engine(DB_URI, echo = True)
-Base = declarative_base()
-Session = sessionmaker(bind = engine)
-session = Session()
-# db = SQLAlchemy(app)
+# engine = create_engine(DB_URI, echo = True)
+# Base = declarative_base()
+# Session = sessionmaker(bind = engine)
+# session = Session()
+db = SQLAlchemy(app)
 
 # define the database model
-class City(Base):
+class City(db.Model):
     __tablename__= "cities"
-    id = Column(Integer, primary_key= True)
-    name = Column(String(80), unique = True)
-    lon = Column(Float)
-    lat = Column(Float)
-    geo = Column(Geometry("Point"))
+    id = db.Column(Integer, primary_key= True)
+    name = db.Column(String(80), unique = True)
+    lon = db.Column(Float)
+    lat = db.Column(Float)
+    geo = db.Column(Geometry("Point"))
 
     def __init__(self,name, lon, lat, geo):
         self.name = name
@@ -42,19 +42,20 @@ class City(Base):
 
 
     def __repr__(self):
-           return "<City {id} {name} ({lat}, {lon})>".format(
-               id=self.id, name=self.name, lat=self.lat, lon=self.lon)
+           return "<City {id} {name} ({lon}, {lat})>".format(
+               id=self.id, name=self.name, lon=self.lon, lat=self.lat,)
 
     @staticmethod
     def get_cities_within_buffer(cityID, radius):
-        city = session.query(City).get(cityID)
-        selected_cities = session.query(City).filter(func.ST_DistanceSphere(City.geo, city.geo)< radius).all()
+        city = City.query.get(cityID)
+        selected_cities = City.query.filter(func.ST_DistanceSphere(City.geo, city.geo)< radius).all()
         return selected_cities
+
     @staticmethod
     def get_distance(cityID1, cityID2):
-        city1= session.query(City).get(cityID1)
-        city2= session.query(City).get(cityID2)
-        distance = session.scalar(func.ST_DistanceSphere(city1.geo, city2.geo))
+        city1= City.query.get(cityID1)
+        city2= City.query.get(cityID2)
+        distance = db.session.scalar(func.ST_DistanceSphere(city1.geo, city2.geo))
         return str(distance) + "m"
 
     @classmethod
@@ -62,26 +63,15 @@ class City(Base):
         """Put a new city in the database."""
         geo = 'POINT({} {})'.format(lon, lat)
         city = City(name=name, lon=lon, lat=lat, geo=geo)
-        session.add(city)
-        session.commit()
-
-    @classmethod
-    def update_geometries(cls):
-        """Using each city's longitude and latitude, add geometry data to db."""
-        cities = session.query(City).all()
-
-        for city in cities:
-            point = 'ST_POINT({} {})'.format(city.lon, city.lat)
-            city.geo = point
-        session.commit()
+        db.session.add(city)
+        db.session.commit()
 
     @staticmethod
     def getSRID(id):
-        city = session.query(City).get(id)
+        city = City.query.get(id)
         print(1)
-        srid = session.scalar(func.ST_SRID(city.geo))
+        srid = db.session.scalar(func.ST_SRID(city.geo))
         return srid
-
 
 
 
@@ -92,28 +82,30 @@ def index():
 
 @app.route("/map")
 def map():
-    all_cities = session.query(City).order_by(City.name).all()
+    all_cities = City.query.order_by(City.name).all()
     collection = []
     for city in all_cities:
         # convert string to dictionary (for js to read as json)--> use json.loads
-        collection.append(json.loads(session.scalar(func.ST_AsGeoJSON(city.geo))))
+        geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
+        geojsonFeature["properties"] = {"name": city.name}
+        collection.append(geojsonFeature)
     return render_template("map.html", cities = collection)
 
 @app.route("/cities")
 def cities():
-    all_cities = session.query(City).order_by(City.name).all()
+    all_cities = City.query.order_by(City.name).all()
     return render_template("cities.html", cities = all_cities)
 
 @app.route("/cities/delete/<int:id>")
 def delete(id):
     deleted_city = City.__table__.delete().where(City.id == id)
-    session.execute(deleted_city)
-    session.commit()
+    db.session.execute(deleted_city)
+    db.session.commit()
     return redirect("/cities")
 
 @app.route("/cities/edit/<int:id>", methods = ["GET", "POST"])
 def edit(id):
-    city = session.query(City).get(id)
+    city = City.query.get(id)
     if request.method == "POST":
         # to access form data (data transmitted in a POST or PUT request)
         # we can use the form attribute
@@ -132,7 +124,7 @@ def addNew():
         try:
             new_city = City.add_city(city_name, city_lon, city_lat)
         except IntegrityError:
-            session.rollback()
+            db.session.rollback()
         return redirect("/cities")
     else:
         return render_template("new_city.html")
