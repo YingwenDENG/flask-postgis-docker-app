@@ -111,6 +111,10 @@ def edit(id):
         # we can use the form attribute
         city.lon = request.form["longi"]
         city.lat = request.form["lati"]
+        # update the point according to the longitude and latitude
+        point = 'POINT({} {})'.format(city.lon, city.lat)
+        city.geo = point
+        db.session.commit()
         return redirect("/cities")
     else:
         return render_template("edit.html", city=city)
