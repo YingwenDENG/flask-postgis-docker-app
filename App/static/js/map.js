@@ -10,8 +10,16 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     zoomOffset: -1
 }).addTo(mymap);
 
-console.log(cities)
-// const cities = [{"type":"Point","coordinates":[13.0205,47.8407]}, {"type":"Point","coordinates":[35.444,12.45454]}, {"type":"Point","coordinates":[13.0974,47.6839]}, {"type":"Point","coordinates":[13.0458,47.7979]}]
 
-// const marker = L.marker([51.5, -0.09]).addTo(mymap);
-L.geoJSON(cities).addTo(mymap)
+// "cities" is the geojson of the cities in the DB
+console.log(cities)
+
+function onEachCityFeature(feature, layer){
+    layer.bindPopup(feature.properties.name +
+    "-- latitude:" + feature.coordinates[0].toString() + ", longitude:" + feature.coordinates[1].toString() )
+    console.log(feature)
+}
+
+L.geoJSON(cities, {
+    onEachFeature: onEachCityFeature
+}).addTo(mymap)
