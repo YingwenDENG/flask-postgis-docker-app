@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Edit Cities</title>
+{% endblock %}
+
+{% block body %}
+<h2>Edit City Info</h2>
+<hr>
+
+<h3>{{city.name}}</h3>
+<form action="/cities/edit/{{city.id}}" method="POST">
+    <div class="mb-3">
+        <label for="lon" class="form-label">Longitude</label>
+        <input class="form-control" name= "longi" id="lon" aria-describedby="longitude" value={{city.lon}}>
+    </div>
+    <div class="mb-3">
+        <label for="lat" class="form-label">Latitude</label>
+        <input  class="form-control" name="lati" id="lat" aria-describedby="latitude" value={{city.lat}}>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

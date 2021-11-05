@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Add New City</title>
+{% endblock %}
+
+{% block body %}
+<h2>Add new city</h2>
+<form action="/cities/new" method="POST">
+    <div class="mb-3">
+        <label for="name" class="form-label">City Name</label>
+        <input class="form-control" name= "name" id="name" aria-describedby="city name">
+    </div>
+    <div class="mb-3">
+        <label for="lon" class="form-label">Longitude</label>
+        <input class="form-control" name= "longi" id="lon" aria-describedby="longitude">
+    </div>
+    <div class="mb-3">
+        <label for="lat" class="form-label">Latitude</label>
+        <input  class="form-control" name="lati" id="lat" aria-describedby="latitude">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}
