@@ -46,8 +46,8 @@ class City(db.Model):
                id=self.id, name=self.name, lon=self.lon, lat=self.lat,)
 
     @staticmethod
-    def get_cities_within_buffer(cityID, radius):
-        city = City.query.get(cityID)
+    def get_cities_within_buffer(city_name, radius):
+        city = City.query.filter_by(name = city_name).first()
         selected_cities = City.query.filter(func.ST_DistanceSphere(City.geo, city.geo)< radius).all()
         return selected_cities
 
@@ -87,6 +87,7 @@ def map():
     for city in all_cities:
         # convert string to dictionary (for js to read as json)--> use json.loads
         geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
+        geojsonFeature["id"] = city.id
         geojsonFeature["properties"] = {"name": city.name}
         collection.append(geojsonFeature)
     return render_template("map.html", cities = collection)
