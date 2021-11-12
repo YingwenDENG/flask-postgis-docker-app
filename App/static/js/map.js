@@ -1,3 +1,17 @@
+// use AJAX to get the cities as JSON object
+document.addEventListener("DOMContentLoaded", ()=>{
+    const request = new XMLHttpRequest();
+    request.open("GET", "/getCities")
+    request.onload = () =>{
+        const response = request.responseText
+        console.log("AJAX response: ", response)
+        L.geoJSON(JSON.parse(response), {
+            onEachFeature: onEachCityFeature
+        }).addTo(mymap)
+    }
+    request.send();
+})
+
 const mymap = L.map('map').setView([47.7979, 13.0458], 10);
 
 
@@ -10,16 +24,9 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     zoomOffset: -1
 }).addTo(mymap);
 
-
-// "cities" is the geojson of the cities in the DB
-console.log(cities)
-
 function onEachCityFeature(feature, layer){
     layer.bindPopup(feature.properties.name +
     "-- latitude:" + feature.coordinates[0].toString() + ", longitude:" + feature.coordinates[1].toString() )
     console.log(feature)
 }
 
-L.geoJSON(cities, {
-    onEachFeature: onEachCityFeature
-}).addTo(mymap)

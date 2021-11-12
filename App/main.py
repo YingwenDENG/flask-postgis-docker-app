@@ -82,15 +82,19 @@ def index():
 
 @app.route("/map")
 def map():
-    all_cities = City.query.order_by(City.name).all()
-    collection = []
-    for city in all_cities:
-        # convert string to dictionary (for js to read as json)--> use json.loads
-        geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
-        geojsonFeature["id"] = city.id
-        geojsonFeature["properties"] = {"name": city.name}
-        collection.append(geojsonFeature)
-    return render_template("map.html", cities = collection)
+    return render_template("map.html")
+
+@app.route("/getCities")
+def getCities():
+      all_cities = City.query.order_by(City.name).all()
+      collection = []
+      for city in all_cities:
+            # convert string to dictionary (for js to read as json)--> use json.loads
+            geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
+            geojsonFeature["id"] = city.id
+            geojsonFeature["properties"] = {"name": city.name}
+            collection.append(geojsonFeature)
+      return json.dumps(collection)
 
 @app.route("/cities")
 def cities():

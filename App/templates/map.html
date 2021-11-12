@@ -17,14 +17,11 @@
 <hr>
 <div id="map"></div>
 
-{% for city in cities %}
-    <p>{{city}}</p>
-{% endfor %}
 {% endblock %}
 
 {% block JS %}
-<script type="text/javascript">
-    const cities = {{ cities | safe }}
-</script>
+<!--<script type="text/javascript">-->
+<!--    const cities = {{ cities | safe }}-->
+<!--</script>-->
 <script src="{{url_for('static', filename='js/map.js')}}" ></script>
 {% endblock %}
