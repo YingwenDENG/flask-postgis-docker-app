@@ -15,14 +15,11 @@ import json
 
 app = Flask(__name__)
 
-DB_URI= 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user="postgres",pw="abc",url="postgis:5432",db="postgres")
-app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI # pass to where the database is
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config.from_object("project.config.Config")
+# DB_URI= 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user="postgres",pw="abc",url="postgis:5432",db="postgres")
+# app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI # pass to where the database is
+# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# engine = create_engine(DB_URI, echo = True)
-# Base = declarative_base()
-# Session = sessionmaker(bind = engine)
-# session = Session()
 db = SQLAlchemy(app)
 
 # define the database model
@@ -73,8 +70,6 @@ class City(db.Model):
         srid = db.session.scalar(func.ST_SRID(city.geo))
         return srid
 
-
-
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -98,7 +93,10 @@ def getCities():
 
 @app.route("/cities")
 def cities():
-    all_cities = City.query.order_by(City.name).all()
+    try:
+        all_cities = City.query.order_by(City.name).all()
+    except:
+        return "No table yet"
     return render_template("cities.html", cities = all_cities)
 
 @app.route("/cities/delete/<int:id>")
