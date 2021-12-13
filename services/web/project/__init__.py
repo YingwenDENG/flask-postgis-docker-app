@@ -1,16 +1,14 @@
+import json
+
+
 from flask import Flask, render_template, redirect, request
 from flask_sqlalchemy import SQLAlchemy
-
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker
-
-
-from sqlalchemy import func
+from sqlalchemy import func, exc
 from geoalchemy2 import Geometry
-
-import json
 
 
 app = Flask(__name__)
@@ -22,36 +20,35 @@ app.config.from_object("project.config.Config")
 
 db = SQLAlchemy(app)
 
+
 # define the database model
 class City(db.Model):
-    __tablename__= "cities"
-    id = db.Column(Integer, primary_key= True)
-    name = db.Column(String(80), unique = True)
+    __tablename__ = "cities"
+    id = db.Column(Integer, primary_key=True)
+    name = db.Column(String(80), unique=True)
     lon = db.Column(Float)
     lat = db.Column(Float)
     geo = db.Column(Geometry("Point"))
 
-    def __init__(self,name, lon, lat, geo):
+    def __init__(self, name, lon, lat, geo):
         self.name = name
         self.lon = lon
         self.lat = lat
         self.geo = geo
 
-
     def __repr__(self):
-           return "<City {id} {name} ({lon}, {lat})>".format(
-               id=self.id, name=self.name, lon=self.lon, lat=self.lat,)
+        return "<City {id} {name} ({lon}, {lat})>".format(id=self.id, name=self.name, lon=self.lon, lat=self.lat)
 
     @staticmethod
     def get_cities_within_buffer(city_name, radius):
-        city = City.query.filter_by(name = city_name).first()
-        selected_cities = City.query.filter(func.ST_DistanceSphere(City.geo, city.geo)< radius).all()
+        city = City.query.filter_by(name=city_name).first()
+        selected_cities = City.query.filter(func.ST_DistanceSphere(City.geo, city.geo) < radius).all()
         return selected_cities
 
     @staticmethod
     def get_distance(cityID1, cityID2):
-        city1= City.query.get(cityID1)
-        city2= City.query.get(cityID2)
+        city1 = City.query.get(cityID1)
+        city2 = City.query.get(cityID2)
         distance = db.session.scalar(func.ST_DistanceSphere(city1.geo, city2.geo))
         return str(distance) + "m"
 
@@ -70,6 +67,7 @@ class City(db.Model):
         srid = db.session.scalar(func.ST_SRID(city.geo))
         return srid
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -79,25 +77,28 @@ def index():
 def map():
     return render_template("map.html")
 
+
 @app.route("/getCities")
 def getCities():
-      all_cities = City.query.order_by(City.name).all()
-      collection = []
-      for city in all_cities:
-            # convert string to dictionary (for js to read as json)--> use json.loads
-            geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
-            geojsonFeature["id"] = city.id
-            geojsonFeature["properties"] = {"name": city.name}
-            collection.append(geojsonFeature)
-      return json.dumps(collection)
+    all_cities = City.query.order_by(City.name).all()
+    collection = []
+    for city in all_cities:
+        # convert string to dictionary (for js to read as json)--> use json.loads
+        geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
+        geojsonFeature["id"] = city.id
+        geojsonFeature["properties"] = {"name": city.name}
+        collection.append(geojsonFeature)
+    return json.dumps(collection)
+
 
 @app.route("/cities")
 def cities():
     try:
         all_cities = City.query.order_by(City.name).all()
-    except:
+    except exc.ProgrammingError:
         return "No table yet"
-    return render_template("cities.html", cities = all_cities)
+    return render_template("cities.html", cities=all_cities)
+
 
 @app.route("/cities/delete/<int:id>")
 def delete(id):
@@ -106,7 +107,8 @@ def delete(id):
     db.session.commit()
     return redirect("/cities")
 
-@app.route("/cities/edit/<int:id>", methods = ["GET", "POST"])
+
+@app.route("/cities/edit/<int:id>", methods=["GET", "POST"])
 def edit(id):
     city = City.query.get(id)
     if request.method == "POST":
@@ -122,21 +124,24 @@ def edit(id):
     else:
         return render_template("edit.html", city=city)
 
-@app.route("/cities/new", methods = ["GET", "POST"])
+
+@app.route("/cities/new", methods=["GET", "POST"])
 def addNew():
     if request.method == "POST":
         city_name = request.form["name"]
         city_lon = request.form["longi"]
         city_lat = request.form["lati"]
         try:
-            new_city = City.add_city(city_name, city_lon, city_lat)
-        except IntegrityError:
+            # new_city = City.add_city(city_name, city_lon, city_lat)
+            City.add_city(city_name, city_lon, city_lat)
+        except exc.IntegrityError:
             db.session.rollback()
         return redirect("/cities")
     else:
         return render_template("new_city.html")
 
+
 # if we run this directly from the command line
-if __name__=="__main__":
+if __name__ == "__main__":
     # we turn on the debug mode
     app.run(debug=True)

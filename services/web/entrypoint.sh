@@ -11,6 +11,11 @@ then
     echo "Postgis started"
 fi
 
-python manage.py create_db
+if [ "$FLASK_ENV" = "development" ]
+then
+  echo "Creating database tables..."
+  python manage.py create_db
+  echo "Table created"
+fi
 
 exec "$@"
