@@ -1,7 +1,7 @@
 import json
 
 
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -105,7 +105,7 @@ def delete(id):
     deleted_city = City.__table__.delete().where(City.id == id)
     db.session.execute(deleted_city)
     db.session.commit()
-    return redirect("/cities")
+    return redirect(url_for("cities", _external=True))
 
 
 @app.route("/cities/edit/<int:id>", methods=["GET", "POST"])
@@ -120,7 +120,7 @@ def edit(id):
         point = 'POINT({} {})'.format(city.lon, city.lat)
         city.geo = point
         db.session.commit()
-        return redirect("/cities")
+        return redirect(url_for("cities", _external=True))
     else:
         return render_template("edit.html", city=city)
 
@@ -136,7 +136,7 @@ def addNew():
             City.add_city(city_name, city_lon, city_lat)
         except exc.IntegrityError:
             db.session.rollback()
-        return redirect("/cities")
+        return redirect(url_for("cities", _external=True))
     else:
         return render_template("new_city.html")
 
