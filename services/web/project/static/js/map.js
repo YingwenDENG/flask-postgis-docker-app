@@ -15,16 +15,24 @@
 
 
 export function addAllFeaturesToMap(){
-    // use AJAX to get the cities as JSON object
-    document.addEventListener("DOMContentLoaded", ()=>{
-        const request = new XMLHttpRequest();
-        request.open("GET", "/_getCities")
-        request.onload = () =>{
-            const response = request.responseText
-            console.log("AJAX response: ", response)
-            addFeatureToMap(response)
-        }
-        request.send();
+    // // use AJAX to get the cities as JSON object
+    // document.addEventListener("DOMContentLoaded", ()=>{
+    //     const request = new XMLHttpRequest();
+    //     request.open("GET", "/_getCities")
+    //     request.onload = () =>{
+    //         const response = request.responseText
+    //         console.log("AJAX response: ", response)
+    //         addFeatureToMap(response)
+    //     }
+    //     request.send();
+    // })
+    $(document).ready(function () {
+        $.ajax({
+            url: '/_getCities'
+        }).done(function (json_str){
+            console.log(json_str)
+            addFeatureToMap(json_str);
+        })
     })
 }
 
