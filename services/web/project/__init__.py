@@ -14,7 +14,7 @@ from geoalchemy2 import Geometry
 app = Flask(__name__)
 
 app.config.from_object("project.config.Config")
-# DB_URI= 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user="postgres",pw="abc",url="postgis:5432",db="postgres")
+## DB_URI= 'postgresql+psycopg2://{user}:{pw}@{url}/{db}'.format(user="postgres",pw="abc",url="postgis:5432",db="postgres")
 # app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI # pass to where the database is
 # app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -47,9 +47,9 @@ class City(db.Model):
         return selected_cities, coordinate
 
     @staticmethod
-    def get_distance(cityID1, cityID2):
-        city1 = City.query.get(cityID1)
-        city2 = City.query.get(cityID2)
+    def get_distance(city_id_1, city_id_2):
+        city1 = City.query.get(city_id_1)
+        city2 = City.query.get(city_id_2)
         distance = db.session.scalar(func.ST_DistanceSphere(city1.geo, city2.geo))
         return str(distance) + "m"
 
@@ -69,14 +69,14 @@ class City(db.Model):
         return srid
 
     @staticmethod
-    def toJSON(cityCollection):
+    def toJSON(city_collection):
         collection = []
-        for city in cityCollection:
+        for city in city_collection:
             # convert string to dictionary (for js to read as json)--> use json.loads
-            geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
-            geojsonFeature["id"] = city.id
-            geojsonFeature["properties"] = {"name": city.name}
-            collection.append(geojsonFeature)
+            geojson_feature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
+            geojson_feature["id"] = city.id
+            geojson_feature["properties"] = {"name": city.name}
+            collection.append(geojson_feature)
         return json.dumps(collection)
 
 
@@ -91,7 +91,7 @@ def map():
 
 
 @app.route("/_getCities")
-def getCities():
+def get_cities():
     all_cities = City.query.order_by(City.name).all()
     return City.toJSON(all_cities)
 
@@ -131,7 +131,7 @@ def edit(id):
 
 
 @app.route("/cities/new", methods=["GET", "POST"])
-def addNew():
+def add_new_city():
     if request.method == "POST":
         city_name = request.form["name"]
         city_lon = request.form["longi"]
@@ -146,13 +146,13 @@ def addNew():
 
 
 @app.route("/_withinBuffer/<int:id>/<int:distance>")
-def withinBuffer(id, distance):
-    citiesInBuffer, cityCoord = City.get_cities_within_buffer(id, distance)
+def within_buffer(id, distance):
+    cities_in_buffer, city_coord = City.get_cities_within_buffer(id, distance)
     collection = ""
-    for city in citiesInBuffer:
+    for city in cities_in_buffer:
         collection += (str(city.name) + " ")
     if collection != "":
-        return collection + "**" + City.toJSON(citiesInBuffer) + "**[{lat}, {lon}]".format(lat=cityCoord[0], lon=cityCoord[1])
+        return collection + "**" + City.toJSON(cities_in_buffer) + "**[{lat}, {lon}]".format(lat=city_coord[0], lon=city_coord[1])
     else:
         return "No spots found."
 
