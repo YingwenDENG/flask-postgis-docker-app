@@ -18,13 +18,13 @@ services:
     image: postgis/postgis
     restart: on-failure
     ports:
-      - "3333:5432"
+      - "1447:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data/
   nginx:
     build: ./services/nginx
     ports:
-      - "1335:90"
+      - "1444:80"
     depends_on:
       - web
 volumes:

@@ -20,8 +20,9 @@
 {% endblock %}
 
 {% block JS %}
-<!--<script type="text/javascript">-->
-<!--    const cities = {{ cities | safe }}-->
-<!--</script>-->
-<script src="{{url_for('static', filename='js/map.js')}}" ></script>
+<script type="module">
+    import {addAllFeaturesToMap} from "../static/js/map.js";
+    addAllFeaturesToMap();
+</script>
+<script type="module" src="{{url_for('static', filename='js/map.js')}}" ></script>
 {% endblock %}

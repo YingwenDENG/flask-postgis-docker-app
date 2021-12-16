@@ -40,10 +40,11 @@ class City(db.Model):
         return "<City {id} {name} ({lon}, {lat})>".format(id=self.id, name=self.name, lon=self.lon, lat=self.lat)
 
     @staticmethod
-    def get_cities_within_buffer(city_name, radius):
-        city = City.query.filter_by(name=city_name).first()
-        selected_cities = City.query.filter(func.ST_DistanceSphere(City.geo, city.geo) < radius).all()
-        return selected_cities
+    def get_cities_within_buffer(city_id, radius):
+        city = City.query.filter_by(id=city_id).first()
+        coordinate = [city.lat, city.lon]
+        selected_cities = City.query.filter((func.ST_DistanceSphere(City.geo, city.geo) < radius), (City.id != city.id)).all()
+        return selected_cities, coordinate
 
     @staticmethod
     def get_distance(cityID1, cityID2):
@@ -67,6 +68,17 @@ class City(db.Model):
         srid = db.session.scalar(func.ST_SRID(city.geo))
         return srid
 
+    @staticmethod
+    def toJSON(cityCollection):
+        collection = []
+        for city in cityCollection:
+            # convert string to dictionary (for js to read as json)--> use json.loads
+            geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
+            geojsonFeature["id"] = city.id
+            geojsonFeature["properties"] = {"name": city.name}
+            collection.append(geojsonFeature)
+        return json.dumps(collection)
+
 
 @app.route("/")
 def index():
@@ -78,17 +90,10 @@ def map():
     return render_template("map.html")
 
 
-@app.route("/getCities")
+@app.route("/_getCities")
 def getCities():
     all_cities = City.query.order_by(City.name).all()
-    collection = []
-    for city in all_cities:
-        # convert string to dictionary (for js to read as json)--> use json.loads
-        geojsonFeature = json.loads(db.session.scalar(func.ST_AsGeoJSON(city.geo)))
-        geojsonFeature["id"] = city.id
-        geojsonFeature["properties"] = {"name": city.name}
-        collection.append(geojsonFeature)
-    return json.dumps(collection)
+    return City.toJSON(all_cities)
 
 
 @app.route("/cities")
@@ -132,13 +137,24 @@ def addNew():
         city_lon = request.form["longi"]
         city_lat = request.form["lati"]
         try:
-            # new_city = City.add_city(city_name, city_lon, city_lat)
             City.add_city(city_name, city_lon, city_lat)
         except exc.IntegrityError:
             db.session.rollback()
         return redirect(url_for("cities", _external=True))
     else:
         return render_template("new_city.html")
+
+
+@app.route("/_withinBuffer/<int:id>/<int:distance>")
+def withinBuffer(id, distance):
+    citiesInBuffer, cityCoord = City.get_cities_within_buffer(id, distance)
+    collection = ""
+    for city in citiesInBuffer:
+        collection += (str(city.name) + " ")
+    if collection != "":
+        return collection + "**" + City.toJSON(citiesInBuffer) + "**[{lat}, {lon}]".format(lat=cityCoord[0], lon=cityCoord[1])
+    else:
+        return "No spots found."
 
 
 # if we run this directly from the command line

@@ -2,19 +2,48 @@
 
 {% block head %}
 <title>Cities</title>
+<link rel="stylesheet" type= "text/css" href="{{url_for('static', filename='css/cities.css')}}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""/>
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
 {% endblock %}
 
 {% block body %}
 <div class="d-flex justify-content-between  align-items-center">
     <h1 class="my-3">All cities </h1>
-    <a href="/cities/new" class="btn btn-sm btn-success px-4 gap-3"> + New posts</a>
+    <a href="/cities/new" class="btn btn-sm btn-success px-4 gap-3"> + New Cities</a>
 </div>
 <hr>
-{% for city in cities %}
-<h2>{{ city.name}}</h2>
-<p>longitude: {{city.lon}}, latitude: {{city.lat}}</p>
-<a href="/cities/edit/{{city.id}}" class="btn btn-sm btn-primary px-4 gap-3">Edit</a>
-<a href="/cities/delete/{{city.id}}" class="btn btn-sm btn-secondary px-4 gap-3">Delete</a>
-<hr>
-{% endfor %}
+<div class="container-fluid d-flex">
+    <div id="cityList">
+        {% for city in cities %}
+        <h2>{{ city.name}}</h2>
+        <p>longitude: {{city.lon}}, latitude: {{city.lat}}</p>
+        <a href="/cities/edit/{{city.id}}" class="btn btn-sm btn-primary px-4 gap-3 mb-3">Edit</a>
+        <a href="/cities/delete/{{city.id}}" class="btn btn-sm btn-secondary px-4 gap-3 mb-3">Delete</a>
+        <div class="input-group input-group-sm mb-3">
+            <button class="btn btn-info" id="btn-{{city.id}}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{city.id}}" >Search spots within </button>
+            <input type="text" class="form-control" id="inputDistance-{{city.id}}" placeholder="e.g. 1,000">
+            <span class="input-group-text">meters</span>
+        </div>
+        <div class="collapse p-2" id="collapse-{{city.id}}">
+            <div class="card card-body"></div>
+        </div>
+        <hr>
+        {% endfor %}
+    </div>
+    <div id="mapView">
+        <h4>Search result</h4>
+        <div class="p-2"><div id="map"></div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block JS %}
+<script type="module" src="{{url_for('static', filename='js/map.js')}}" ></script>
+<script type="module" src="{{url_for('static', filename='js/spotsInBuffer.js')}}" ></script>
 {% endblock %}
