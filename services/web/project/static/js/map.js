@@ -29,9 +29,9 @@ export function addAllFeaturesToMap(){
     $(document).ready(function () {
         $.ajax({
             url: '/_getCities'
-        }).done(function (json_str){
-            console.log(json_str)
-            addFeatureToMap(json_str);
+        }).done(function (response){
+            console.log(response)
+            addFeatureToMap(response.cities);
         })
     })
 }
@@ -56,8 +56,7 @@ function onEachCityFeature(feature, layer){
 }
 
 export function addFeatureToMap(features){
-    // JSON.parse: parses a JSON string, constructing the JS value or object
-    L.geoJSON(JSON.parse(features), {
+    L.geoJSON(features, {
         onEachFeature: onEachCityFeature
     }).addTo(mymap)
 }
@@ -71,7 +70,8 @@ export function removeLayers(){
 }
 
 export function addBufferCircle(centroid, distance){
-    L.circle(centroid, {
+    // JSON.parse: parses a JSON string, constructing the JS value or object
+    L.circle(JSON.parse(centroid), {
         color: "yellow",
         fillColor: "#eec671",
         fillOpacity: 0.5,
