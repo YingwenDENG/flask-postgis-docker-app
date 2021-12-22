@@ -41,5 +41,10 @@ $(document).ready(function () {
 })
 
 function showSpotsResult(id, result) {
-    document.getElementById(`collapse-${id}`).innerHTML = "<div class='card card-body'>" + result + "</div>"
+    let innerHTML=""
+    result.forEach((e)=>{
+        innerHTML += "<span class=\"badge bg-warning m-1 \">" + e + "</span>"
+    })
+    document.getElementById(`collapse-${id}`).innerHTML = innerHTML
+    // document.getElementById(`collapse-${id}`).innerHTML = "<div class='card card-body'>" + result + "</div>"
 }
